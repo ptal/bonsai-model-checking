@@ -12,7 +12,7 @@ import java.util.Set;
 public class ModelFactory {
 
   /* Create a Location */
-  public static Location createLocation(String lab) {new Location(lab);}
+  public static Location createLocation(String lab) {return new Location(lab);}
 
   /* Create a Transition */
   public static Transition createTransition(Location source, Constraint g, Action a, Constraint e,  Location target)

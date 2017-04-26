@@ -67,7 +67,7 @@ public class  Program_Graph
   public Set<String> getVars()               {return localVars;}
 
 // Launch the Program by giving an initial location (among the set of I)
-  public boolean start(Location i)
+  public void start(Location i)
   {
     assert(!is_in_TS);
     assert(initialLocations.contains(i));

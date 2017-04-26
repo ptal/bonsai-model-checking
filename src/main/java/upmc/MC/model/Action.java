@@ -19,6 +19,18 @@ class Action implements Comparable
     name = n;
   }
 
+  // For MultiSet
+  @Override public int compareTo(Object b)
+  {
+    if(this.equals(b)) return 0;
+    if(b instanceof Action)
+    {
+      return this.id > ((Action) b).id ? 1 : -1;
+    }
+    throw(new ClassCastException());
+  }
+
+  // For HashMaps
   @Override public boolean equals(Object o)
   {
     return (o instanceof Action) &&

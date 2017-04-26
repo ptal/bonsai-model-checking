@@ -155,5 +155,7 @@ public class Transition_System
           }
       }
     }
+    
+    return resultsTr;
   }
 }
