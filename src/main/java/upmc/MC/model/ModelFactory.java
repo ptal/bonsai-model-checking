@@ -108,26 +108,22 @@ public class ModelFactory {
   }
   // Add intMinusView(y); (-a) intScaleView (a * b)
 
-  /////////// Test with the Peterson Example
-  public static Transition_System createPetersonExample()
+  public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act)
   {
-    //Actions return Pair<InputAction, OutputAction>
-    Action[] lock_Act = createIOActions("lock");
-    Action[] rel_Act = createIOActions("rel");
 
-    // Process Model
     // Locations
-    Location li = createLocation("linit");
-    Location lw = createLocation("lwait");
-    Location lc = createLocation("lcrit");
-    Location lr = createLocation("lrel");
-    Location le = createLocation("lend");
+    Location li = createLocation("linit" + "_" + postfix);
+    Location lw = createLocation("lwait" + "_" + postfix);
+    Location lc = createLocation("lcrit" + "_" + postfix);
+    Location lr = createLocation("lrel"  + "_" + postfix);
+    Location le = createLocation("lend"  + "_" + postfix);
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
     Transition tiw = createTransition(li, /*if*/ null, Action.tau, null, lw);
     Transition twc = createTransition(lw, null, lock_Act[OUTPUT], null, lc); /* !lock */
     Transition tcr = createTransition(lc, null, Action.tau, /*x++,*/ null, lr);
     Transition tri = createTransition(lr, null, rel_Act[OUTPUT], /*i++,*/ null, li); /* !release */
     Transition tie = createTransition(li, /*if,*/ null, Action.tau, null, le);
+
     // build locations with transitions
     li.addTransition(tiw);li.addTransition(tie);  // li *2
     lw.addTransition(twc);
@@ -143,11 +139,26 @@ public class ModelFactory {
 
     Set<Location> init_process = new HashSet<>();
     init_process.add(li);
+
+    // *********************** ****************** ***********************
+    // *********************** build PG_i  ***********************
+    // *********************** ****************** ***********************
+    return createProgram(locations_process, init_process);
+  }
+
+  /////////// Test with the Peterson Example
+  public static Transition_System createPetersonExample()
+  {
+    //Actions return Pair<InputAction, OutputAction>
+    Action[] lock_Act = createIOActions("lock");
+    Action[] rel_Act = createIOActions("rel");
+
+    // Process Model
     // *********************** ****************** ***********************
     // *********************** build PG_1 and PG_2 ***********************
     // *********************** ****************** ***********************
-    Program_Graph process1 = createProgram(locations_process, init_process);
-    Program_Graph process2 = createProgram(locations_process, init_process);
+    Program_Graph process1 = createProcessModel("1", lock_Act, rel_Act);
+    Program_Graph process2 = createProcessModel("2", lock_Act, rel_Act);
 
     // lock Model
     // Locations

@@ -17,20 +17,22 @@ public class TestJunit {
 
      //** Initial states **//
      Set<Location> inits = new HashSet();
-     Location li = ModelFactory.createLocation("linit");
-     Location lw = ModelFactory.createLocation("lwait");
+     Location li1 = ModelFactory.createLocation("linit_1");
+     Location li2 = ModelFactory.createLocation("linit_2");
+     Location lw1 = ModelFactory.createLocation("lwait_1");
+     Location lw2 = ModelFactory.createLocation("lwait_2");
 
-     inits.add(li);
-     inits.add(li);
+     inits.add(li1);
+     inits.add(li2);
      inits.add(ModelFactory.createLocation("llock"));
 
      assertEquals(true, ts.getCurrentStates().equals(inits));
-
      assertTrue(ts.getCurrentStates().equals(inits));
 
      //** First post **//
      Set<Transition> expectedTrs = new HashSet();
-     expectedTrs.add(ModelFactory.createTransition(li, null/*if*/, null, null, lw));
+     expectedTrs.add(ModelFactory.createTransition(li1, null/*if*/, null, null, lw1));
+     expectedTrs.add(ModelFactory.createTransition(li2, null/*if*/, null, null, lw2));
 
      Set<Transition> actualTrs = ts.post();
      assertTrue(actualTrs == expectedTrs);

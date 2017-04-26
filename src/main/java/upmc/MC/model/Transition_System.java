@@ -149,13 +149,12 @@ public class Transition_System
             //add the provided outputs (if not from si)
             for(Transition to : transitions_of_output.get(in))  //complementary output action ?
             {
-              if(to.source != si)
-                {resultsTr.add(to);}
+              if(!to.source.equals(si)) {resultsTr.add(to);}
             }
           }
       }
     }
-    
+
     return resultsTr;
   }
 }

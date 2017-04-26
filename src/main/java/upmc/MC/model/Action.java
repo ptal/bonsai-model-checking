@@ -19,7 +19,7 @@ class Action implements Comparable
     name = n;
   }
 
-  // For MultiSet
+  // For TreeMultiSet
   @Override public int compareTo(Object b)
   {
     if(this.equals(b)) return 0;
