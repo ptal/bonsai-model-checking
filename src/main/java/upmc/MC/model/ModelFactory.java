@@ -28,6 +28,8 @@ public class ModelFactory {
     {
       InputAction i   = new InputAction(Action.cpt, lab);
       OutputAction o  = new OutputAction(Action.cpt, lab);
+      i.setComplement(o);
+      o.setComplement(i);
       Action.incr();
       Action[] actions = new Action[2];
       actions[INPUT] = i;
@@ -112,11 +114,11 @@ public class ModelFactory {
   {
 
     // Locations
-    Location li = createLocation("linit" + "_" + postfix);
-    Location lw = createLocation("lwait" + "_" + postfix);
-    Location lc = createLocation("lcrit" + "_" + postfix);
-    Location lr = createLocation("lrel"  + "_" + postfix);
-    Location le = createLocation("lend"  + "_" + postfix);
+    Location li = createLocation("init" + "_" + postfix);
+    Location lw = createLocation("request" + "_" + postfix);
+    Location lc = createLocation("crit" + "_" + postfix);
+    Location lr = createLocation("release"  + "_" + postfix);
+    Location le = createLocation("end"  + "_" + postfix);
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
     Transition tiw = createTransition(li, /*if*/ null, Action.tau, null, lw);
     Transition twc = createTransition(lw, null, lock_Act[OUTPUT], null, lc); /* !lock */
@@ -150,7 +152,7 @@ public class ModelFactory {
   public static Transition_System createPetersonExample()
   {
     //Actions return Pair<InputAction, OutputAction>
-    Action[] lock_Act = createIOActions("lock");
+    Action[] lock_Act = createIOActions("req");
     Action[] rel_Act = createIOActions("rel");
 
     // Process Model
@@ -162,8 +164,8 @@ public class ModelFactory {
 
     // lock Model
     // Locations
-    Location lu = createLocation("lunlock");
-    Location ll = createLocation("llock");
+    Location lu = createLocation("unlock");
+    Location ll = createLocation("lock");
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
     Transition tul = createTransition(lu, null, lock_Act[INPUT], null, ll); /* ?lock */
     Transition tlu = createTransition(ll, null, rel_Act[INPUT], null, lu); /* ?release */
@@ -190,9 +192,7 @@ public class ModelFactory {
     pgs.add(process2);
     pgs.add(lock);
 
-    Transition_System ts = createSystem(pgs);
-    ts.start();
-
-    return ts;
+    //start is done in the factory ... keep ?
+    return createSystem(pgs);
   }
 }

@@ -14,13 +14,15 @@ import org.chocosolver.solver.search.strategy.selectors.variables.*;
 
 public class Transition_System
 {
+  //The TS has then 2 internal-states
+  private enum TS_state {CREAT, RUNNING};
+
   // TS defined over vars and AP sets (-> static ?)
   private Set<String> Vars;
   private Set<Atomic_p> AP; //unused yet
 
   // Current System State (note: there may have several initial states [TODO])
-  private Set<Location> currentState; // State (pcs [+ vars -> in bonsai])
-
+  //private Set<Location> currentState;
   // Fixed point managed by SpaceTime (CSP)
   // private set<FlatLattice<Consistent>> visitedState;
 
@@ -28,7 +30,8 @@ public class Transition_System
   private Set<Program_Graph> PGs;
 
   // Internal variables
-  private boolean is_running;
+  private TS_state internal_state = TS_state.CREAT;
+  Map<InputAction, Set<Transition>> transitions_of_input; //compute the sync-transitions
 
   //Constructor
   public Transition_System()
@@ -36,49 +39,119 @@ public class Transition_System
     //empty init
     Vars = new HashSet<>();
     //AP = new HashSet<>();
-    currentState = new HashSet<>();
     PGs = new HashSet<>();
-
-    is_running = false;
   }
 
   public void addProgram(Program_Graph pg)
   {
-    assert(!is_running);
+    assert(TS_state.CREAT == internal_state);
     PGs.add(pg);
     Vars.addAll(pg.getVars());              //addAll ?
     //AP.add(pg.getAP());                   //addAll ? [TODO]
   }
 
-  public void start()
-  {
-    assert(!is_running);
+  /** ~~~~~~ ** ~~~~~~ ** ~~~~~~ Getters ~~~~~~ ** ~~~~~~ ** ~~~~~~ **/
 
-    for(Program_Graph pg : PGs)
-    {
-      // [Fixed] First post() returns the outgoing transition from all (I)
-      currentState.addAll(pg.getInitLocations());
-    }
-    is_running = true;
-  }
-
+  // State (pcs [+ vars -> in bonsai])
   public Set<Location>  getCurrentStates()
   {
-    assert(is_running);
+    assert(TS_state.CREAT != internal_state);
+    Set<Location> currentState = new HashSet<>();
+    for(Program_Graph pg : PGs)
+      {
+        currentState.addAll(pg.getCurrentLocations());
+      }
     return currentState;
   }
 
+
+  /** ~~~~~~ ** ~~~~~~ ** ~~~~~~ Setters ~~~~~~ ** ~~~~~~ ** ~~~~~~ **/
+
+  /** start runs and stops the ts creation
+      The initialisation is done in post (since non-det is present) to fix initial-PG locations (when > 1)
+  **/
+  public void start()
+  {
+    assert(TS_state.CREAT == internal_state);
+
+    for(Program_Graph pg : PGs) {pg.start();}
+    internal_state = TS_state.RUNNING;
+  }
+
+  /** post computes the enabled transition for the current(s) state(s) S (in case of initial locations).
+      apply should be applied to fire a transition and compute the next state S'
+    [out] a set of transition which is:
+          1) -> empty                   : if it is a deadlock or a final state [TODO] + exception deadlock ?
+          2) -> set of transitions      : otherwise
+  **/
   public Set<Transition> post()
   {
-    assert(is_running);
+    assert(TS_state.CREAT != internal_state);
 
-    System.out.println("Current State:" + currentState.toString());
+    //first post
+
+    //[TODO] Tests
+    ArrayList<Set<Location>> sis = new ArrayList<Set<Location>>(); //in case of initial locations
+    for(Program_Graph pg : PGs)
+      {
+        Set<Location> loc_i = pg.getCurrentLocations();
+
+        //Compute the <> SI (initial ts states)
+        if(loc_i.size() > 1) //non-det ||
+        {
+          // || (syncr. product) [TODO] ? can be avoided if the initial locations are fixed in a first step
+          ArrayList<Set<Location>> sis_n = new ArrayList<Set<Location>>();
+          for(Location l_i : loc_i)
+          {
+
+            for(Set<Location> si : sis)
+            {
+              Set<Location> new_si = (Set<Location>) ((HashSet<Location>) si).clone();
+              new_si.add(l_i);
+              sis_n.add(new_si); //l_1 should not be with l_2
+            }
+          }
+          sis = sis_n;
+        } else // == 1
+        {
+          if(0 == sis.size()) //[TODO] up
+          {
+            Set<Location> si = new HashSet<>();
+            si.add((Location) loc_i.toArray()[0]);
+            sis.add(si);
+          }
+          else
+          {
+            for(Set<Location> si : sis) {si.add((Location) loc_i.toArray()[0]);}
+          }
+        }
+      }
+
+      //now post for all SIs
+      Set<Transition> out_trs = new HashSet<Transition>();
+      for(Set<Location> si : sis)
+      {
+        out_trs.addAll(tr_post(si));
+      }
+    // [TODO] distinct final state and deadlocks
+    return out_trs;
+
+    // RUNNING (std post)
+    //return tr_post(getCurrentStates());
+  }
+
+  /** post computes the enabled transition for the given state S.
+      same interface than post except for the input set.
+      [!Algo: hardpoint!]
+  **/
+  private Set<Transition> tr_post(Set<Location> s)
+  {
+    System.out.println("Current State:" + s.toString());
     Set<Transition> resultsTr = new HashSet<>();
     // The next possible transitions are :
     //  tau transitions (without act)
     //  enabled output transitions (to)
     //  [no handled] enabled input transitions [can be compute when to is choosen] ??
-    Set<Transition> progNextStates = new HashSet<>();
 
     // 1) Compute all currrent outputs O [multiset] and link actions/transitions (to) [map: Act -> {tr}]
     Multiset<OutputAction> currentOutputActions = TreeMultiset.create(); //O
@@ -87,13 +160,13 @@ public class Transition_System
     // sync if O_i == I_j \ I_i (for j <> i)
     // Indeed, we cannot sync on the same location
 
-    for(Location si : currentState) //for all current locations
+    for(Location si : s) //for all current locations
     {
       Set<OutputAction> currentOutputs = new HashSet<>(); //O'
       for(Transition t : si.outgoingTransitions()) //for all transitions
       {
         Action out = t.alpha;
-        if      (out == Action.tau) {progNextStates.add(t);} // tau transitions
+        if      (out == Action.tau) {resultsTr.add(t);} // tau transitions
         else if (out instanceof OutputAction)
           {
             OutputAction o = (OutputAction) out;
@@ -118,8 +191,8 @@ public class Transition_System
     }
 
     // Inputs
-    Map<InputAction, Set<Transition>> transitions_of_input = new TreeMap<>(); //Act->{ti} (store in field)
-    for(Location si : currentState)
+    transitions_of_input = new TreeMap<>(); //Act->{ti} (store in field)
+    for(Location si : s)
     {
       Set<InputAction> enabledInputs = new HashSet<>();
       Multiset<OutputAction> providedOutputs = TreeMultiset.create(currentOutputActions); //O
@@ -137,7 +210,7 @@ public class Transition_System
             //add the possible input to the action
             if(transitions_of_input.containsKey(in))
             {
-              transitions_of_input.get(in).add(t);   // act -> to++
+              transitions_of_input.get(in).add(t);   // act -> ti++
             }
             else
             {
@@ -154,7 +227,55 @@ public class Transition_System
           }
       }
     }
-
     return resultsTr;
   }
+
+/** apply fires the transition given in input. This method compute the next state of the ts.
+    Requires a previous post-call [TODO] keep?
+  [in] a transition (should be enabled otherwise it fails NotEnabled_exp exception)
+  [out] a set of transition which is:
+        1) -> empty                   : if it was a tau-transition
+        2) -> set of sync-transitions : if it was an action-transition
+  [exception] NotEnabled_exp : if the input transition is not enabled at current ts-state
+**/
+  public Set<Transition> apply(Transition t_fired) throws NotEnabled_exp
+  {
+    assert(TS_state.CREAT != internal_state);
+    if(!pg_apply(t_fired)) {throw new NotEnabled_exp();}
+
+    if(! (t_fired.alpha instanceof OutputAction)) return null;
+    //else sync-transitions
+
+    InputAction in = ((OutputAction) t_fired.alpha).getComplement();
+    Set<Transition> tis = transitions_of_input.get(in);
+    if(tis.size() > 1) return tis; //non-det choice (second bonsai internal choice)
+    //else no choice
+    if(!pg_apply( ((Transition) tis.toArray()[0]) )) {throw new NotEnabled_exp();}
+    return null;
+  }
+
+  private boolean pg_apply(Transition t_fired)
+  {
+    for(Program_Graph pg : PGs)
+    {
+      try
+      {
+        pg.apply(t_fired);
+        return true;
+      }
+      catch(NotEnabled_exp e){}
+    }
+    return false;
+  }
+
+
+  @Override
+  public String toString()
+  {
+    String out = "Transition System: {";
+    for(Program_Graph pg : PGs) {out += pg.toString() + ",\n";}
+    out += "}\n";
+    return out;
+  }
+
 }

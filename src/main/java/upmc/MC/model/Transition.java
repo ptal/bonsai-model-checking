@@ -63,6 +63,18 @@ public class Transition implements Comparable
     throw(new ClassCastException());
   }
 
+  @Override public boolean equals(Object o)
+  {
+    return (o instanceof Transition) &&
+           (this.source.equals( ((Transition) o).source)) &&
+           (this.target.equals( ((Transition) o).target));
+  }
+
+  public int hashCode()
+  {
+    return source.hashCode() + target.hashCode();
+  }
+
   //no effect ?
 
   public Set<String> getVars() {return Vars_i_t;}
@@ -70,7 +82,11 @@ public class Transition implements Comparable
   @Override
   public String toString()
   {
-    return source.toString() + " -> " + guard.toString() + " : " + alpha.toString() + " : " + effect.toString() + " -> " + target.toString();
+    return source.label + " -> " +
+           (null == guard ? "true " : guard.toString() + " : ") +
+           (null == alpha ? "tau " : alpha.toString() + " : ") +
+           (null == effect ? "eps " : effect.toString()) +
+           " -> " + target.label;
   }
 
 }

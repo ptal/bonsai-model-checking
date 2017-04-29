@@ -42,10 +42,9 @@ class Action implements Comparable
     return id;
   }
 
-
   @Override
   public String toString()
   {
-    return "name";
+    return name + "(" + id + ")";
   }
 }
