@@ -1,7 +1,6 @@
 package bonsai.examples.model;
 
-import java.util.Set;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 
 import bonsai.examples.model.Transition;
@@ -10,7 +9,8 @@ import bonsai.examples.model.Atomic_p;
 public class Location implements Comparable
 {
   final public String label;
-  final public Set<Transition> outgoing_t = new HashSet();
+  // target:loc -> transition
+  final private HashMap<Integer, Transition> outgoing_t = new HashMap();
   //private set<Atomic_p> sats;
 
   public   Location(String l) {label = l;}
@@ -39,17 +39,29 @@ public class Location implements Comparable
   }
 
 
-  public void addTransition(Transition t) {outgoing_t.add(t);}
-  public Set<Transition> outgoingTransitions() {return outgoing_t;}
+  public void addTransition(Transition t)
+  {
+    //System.out.println("----- add: " + t.target);
+    assert(!outgoing_t.containsKey(t.target.hashCode()));
+    outgoing_t.put(t.target.hashCode(), t);
+  }
+  public HashMap<Integer, Transition> outgoingTransitions() {return outgoing_t;}
 
   //public void addAP(Atomic_p p) {sats.add(p);}
   //public set<Atomic_p> getAP() {return sats;}
+
+  public Location fire(Transition t) throws NotEnabled_exp
+  {
+    Transition tgt = outgoing_t.get(t.target.hashCode());
+    if(null == tgt) {throw new NotEnabled_exp();}
+    return tgt.target;
+  }
 
   @Override
   public String toString()
   {
     String out = label + "{\n";
-    for(Transition t : outgoing_t) {out += "\t\t" + t.toString() + "\n";}
+    for(Transition t : outgoing_t.values()) {out += "\t\t" + t.toString() + "\n";}
     return out + "}";
   }
 

@@ -83,8 +83,8 @@ public class Transition implements Comparable
   public String toString()
   {
     return source.label + " -> " +
-           (null == guard ? "true " : guard.toString() + " : ") +
-           (null == alpha ? "tau " : alpha.toString() + " : ") +
+           (null == guard ? "true " : guard.toString()) + " : " +
+           (null == alpha ? "tau " : alpha.toString()) + " : " +
            (null == effect ? "eps " : effect.toString()) +
            " -> " + target.label;
   }

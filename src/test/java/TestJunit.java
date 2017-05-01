@@ -35,15 +35,40 @@ public class TestJunit {
 
      //** First post **//
      Set<Transition> expectedTrs = new HashSet();
-     expectedTrs.add(ModelFactory.createTransition(li1, null/*if*/, null, null, lw1)); //to request
-     expectedTrs.add(ModelFactory.createTransition(li2, null/*if*/, null, null, lw2));
+     // Create transitions used several times (we cannot add twice a same transition in a location)
+     Transition choosed_one = ModelFactory.createTransition(li1, null/*if*/, null, null, lw1);
+     Transition tiw2 = ModelFactory.createTransition(li2, null/*if*/, null, null, lw2);
+     Transition tie2 = ModelFactory.createTransition(li2, null/*if*/, null, null, le2);
+     expectedTrs.add(choosed_one); //to request
+     expectedTrs.add(tiw2);
      expectedTrs.add(ModelFactory.createTransition(li1, null/*if*/, null, null, le1)); //to end
-     expectedTrs.add(ModelFactory.createTransition(li2, null/*if*/, null, null, le2));
+     expectedTrs.add(tie2);
 
      Set<Transition> actualTrs = ts.post();
 
      //test2
-     System.out.println("test2: " + actualTrs.toString() + " and " + expectedTrs.toString());
+     //System.out.println("test2: " + actualTrs.toString() + " and " + expectedTrs.toString());
+     assertTrue(actualTrs.equals(expectedTrs));
+
+     //test3 apply
+     try
+     {
+       actualTrs = ts.apply(choosed_one);
+     } catch (NotEnabled_exp e) {assertTrue(false);}
+     assertTrue(null == actualTrs);
+
+     //test4 post again
+     Location lc1 = ModelFactory.createLocation("crit_1");
+
+     expectedTrs = new HashSet();
+     expectedTrs.add(ModelFactory.createTransition(lw1, null, null, null, lc1));  //to critic
+     expectedTrs.add(tiw2); //to request
+     expectedTrs.add(tie2); //to end
+
+     //System.out.println(ts.toString());
+     actualTrs = ts.post();
+
+     System.out.println("test4: " + actualTrs.toString() + " and " + expectedTrs.toString());
      assertTrue(actualTrs.equals(expectedTrs));
 
      System.out.println("We pass !");

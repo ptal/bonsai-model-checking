@@ -1,6 +1,6 @@
 package bonsai.examples.model;
 
-class InputAction extends Action
+public class InputAction extends Action
 {
   OutputAction complement;
 

@@ -15,7 +15,7 @@ public class ModelFactory {
   public static Location createLocation(String lab) {return new Location(lab);}
 
   /* Create a Transition */
-  public static Transition createTransition(Location source, Constraint g, Action a, Constraint e,  Location target)
+  public static Transition createTransition(Location source, Constraint g, Action a, Constraint e, Location target)
     { Transition t = new Transition(source, g, a, e, target);
       source.addTransition(t);
       return t;
@@ -126,11 +126,8 @@ public class ModelFactory {
     Transition tri = createTransition(lr, null, rel_Act[OUTPUT], /*i++,*/ null, li); /* !release */
     Transition tie = createTransition(li, /*if,*/ null, Action.tau, null, le);
 
-    // build locations with transitions
-    li.addTransition(tiw);li.addTransition(tie);  // li *2
-    lw.addTransition(twc);
-    lc.addTransition(tcr);
-    lr.addTransition(tri);
+    //System.out.println("~~~~test: " + tiw.target.toString());
+
     // set
     Set<Location> locations_process = new HashSet<>();
     locations_process.add(li);
@@ -169,9 +166,6 @@ public class ModelFactory {
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
     Transition tul = createTransition(lu, null, lock_Act[INPUT], null, ll); /* ?lock */
     Transition tlu = createTransition(ll, null, rel_Act[INPUT], null, lu); /* ?release */
-    // build locations with transitions
-    lu.addTransition(tul);
-    ll.addTransition(tlu);
     // set
     Set<Location> locations_lock = new HashSet<>();
     locations_lock.add(lu);

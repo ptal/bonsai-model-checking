@@ -1,6 +1,7 @@
 package bonsai.examples.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.TreeMultiset;
@@ -53,13 +54,13 @@ public class Transition_System
   /** ~~~~~~ ** ~~~~~~ ** ~~~~~~ Getters ~~~~~~ ** ~~~~~~ ** ~~~~~~ **/
 
   // State (pcs [+ vars -> in bonsai])
-  public Set<Location>  getCurrentStates()
+  public Collection<Location>  getCurrentStates()
   {
     assert(TS_state.CREAT != internal_state);
-    Set<Location> currentState = new HashSet<>();
+    Collection<Location> currentState = new HashSet<>();
     for(Program_Graph pg : PGs)
       {
-        currentState.addAll(pg.getCurrentLocations());
+        currentState.addAll(pg.getCurrentLocations().values());
       }
     return currentState;
   }
@@ -94,7 +95,8 @@ public class Transition_System
     ArrayList<Set<Location>> sis = new ArrayList<Set<Location>>(); //in case of initial locations
     for(Program_Graph pg : PGs)
       {
-        Set<Location> loc_i = pg.getCurrentLocations();
+        Collection<Location> loc_i = pg.getCurrentLocations().values();
+        //System.out.println("+++ handle: " + toString());
 
         //Compute the <> SI (initial ts states)
         if(loc_i.size() > 1) //non-det ||
@@ -103,7 +105,6 @@ public class Transition_System
           ArrayList<Set<Location>> sis_n = new ArrayList<Set<Location>>();
           for(Location l_i : loc_i)
           {
-
             for(Set<Location> si : sis)
             {
               Set<Location> new_si = (Set<Location>) ((HashSet<Location>) si).clone();
@@ -114,6 +115,7 @@ public class Transition_System
           sis = sis_n;
         } else // == 1
         {
+            //System.out.println("+++ BEFORE: " + loc_i.toString());
           if(0 == sis.size()) //[TODO] up
           {
             Set<Location> si = new HashSet<>();
@@ -124,6 +126,7 @@ public class Transition_System
           {
             for(Set<Location> si : sis) {si.add((Location) loc_i.toArray()[0]);}
           }
+          //System.out.println("+++ AFTER: " + sis.toString());
         }
       }
 
@@ -163,7 +166,7 @@ public class Transition_System
     for(Location si : s) //for all current locations
     {
       Set<OutputAction> currentOutputs = new HashSet<>(); //O'
-      for(Transition t : si.outgoingTransitions()) //for all transitions
+      for(Transition t : si.outgoingTransitions().values()) //for all transitions
       {
         Action out = t.alpha;
         if      (out == Action.tau) {resultsTr.add(t);} // tau transitions
@@ -202,7 +205,7 @@ public class Transition_System
       }
 
       //now we can sync on providedOutputs !
-      for(Transition t : si.outgoingTransitions())
+      for(Transition t : si.outgoingTransitions().values())
       {
         Action in = t.alpha;
         if(in instanceof InputAction && providedOutputs.contains(in)) //sync ! (TODO: check if it works)

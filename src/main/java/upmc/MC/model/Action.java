@@ -1,6 +1,6 @@
 package bonsai.examples.model;
 
-class Action implements Comparable
+public class Action implements Comparable
 {
   public final String name;
   public final int id;
@@ -9,8 +9,8 @@ class Action implements Comparable
   static Action tau = new Action(0, "tau");
 
   //counter id
-  static int cpt = 1; // 0 -> tau
-  static void incr() {cpt++;}
+  public static int cpt = 1; // 0 -> tau
+  public static void incr() {cpt++;}
   //counter id
 
   public Action(int i, String n)
