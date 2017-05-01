@@ -102,7 +102,7 @@ public class  Program_Graph
 
 // Apply one of the transition from the current location
 // retreive the pg's transition and apply it (prevent from bad transition in input)
-  public Location apply(Transition t) throws NotEnabled_exp
+  public Transition apply(Transition t) throws NotEnabled_exp
   {
     assert(is_in_TS);
 
@@ -113,15 +113,16 @@ public class  Program_Graph
       if(null == to_fired) {throw new NotEnabled_exp();}
     } else
     {
-      if(current_l != t.source)
+      if(!current_l.equals(t.source))
       {
         {throw new NotEnabled_exp();}
       }
       to_fired = current_l;
     }
 
-    current_l = to_fired.fire(t);
-    return current_l;
+    Transition fired = to_fired.fire(t);
+    current_l = fired.target;
+    return fired;
   }
 
   @Override

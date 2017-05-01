@@ -50,11 +50,12 @@ public class Location implements Comparable
   //public void addAP(Atomic_p p) {sats.add(p);}
   //public set<Atomic_p> getAP() {return sats;}
 
-  public Location fire(Transition t) throws NotEnabled_exp
+  //return the fired location
+  public Transition fire(Transition t) throws NotEnabled_exp
   {
     Transition tgt = outgoing_t.get(t.target.hashCode());
     if(null == tgt) {throw new NotEnabled_exp();}
-    return tgt.target;
+    return tgt;
   }
 
   @Override

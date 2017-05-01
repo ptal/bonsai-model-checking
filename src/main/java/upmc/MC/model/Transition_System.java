@@ -149,7 +149,7 @@ public class Transition_System
   **/
   private Set<Transition> tr_post(Set<Location> s)
   {
-    System.out.println("Current State:" + s.toString());
+    //System.out.println("Current State:" + s.toString());
     Set<Transition> resultsTr = new HashSet<>();
     // The next possible transitions are :
     //  tau transitions (without act)
@@ -244,31 +244,35 @@ public class Transition_System
   public Set<Transition> apply(Transition t_fired) throws NotEnabled_exp
   {
     assert(TS_state.CREAT != internal_state);
-    if(!pg_apply(t_fired)) {throw new NotEnabled_exp();}
+    Transition t_pg_fired = pg_apply(t_fired);
+    if(null == t_pg_fired) {throw new NotEnabled_exp();}
 
-    if(! (t_fired.alpha instanceof OutputAction)) return null;
+    if(! (t_pg_fired.alpha instanceof OutputAction)) return null;
     //else sync-transitions
 
-    InputAction in = ((OutputAction) t_fired.alpha).getComplement();
+    InputAction in = ((OutputAction) t_pg_fired.alpha).getComplement();
     Set<Transition> tis = transitions_of_input.get(in);
+
+    //System.out.println("something here: " + tis.toString());
+
     if(tis.size() > 1) return tis; //non-det choice (second bonsai internal choice)
     //else no choice
-    if(!pg_apply( ((Transition) tis.toArray()[0]) )) {throw new NotEnabled_exp();}
+    if(null == pg_apply( ((Transition) tis.toArray()[0]) )) {throw new NotEnabled_exp();}
     return null;
   }
 
-  private boolean pg_apply(Transition t_fired)
+  //return the real fired transition (from pg)
+  private Transition pg_apply(Transition t_fired)
   {
     for(Program_Graph pg : PGs)
     {
       try
       {
-        pg.apply(t_fired);
-        return true;
+        return pg.apply(t_fired);
       }
       catch(NotEnabled_exp e){}
     }
-    return false;
+    return null;
   }
 
 

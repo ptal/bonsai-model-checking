@@ -26,9 +26,11 @@ public class TestJunit {
      Location le1 = ModelFactory.createLocation("end_1");
      Location le2 = ModelFactory.createLocation("end_2");
 
+     Location lunlock = ModelFactory.createLocation("unlock");
+     Location llock = ModelFactory.createLocation("lock");
      inits.add(li1);
      inits.add(li2);
-     inits.add(ModelFactory.createLocation("unlock"));
+     inits.add(lunlock);
 
      //assertEquals(true, ts.getCurrentStates().equals(inits)); same
      assertTrue(ts.getCurrentStates().equals(inits));
@@ -61,15 +63,34 @@ public class TestJunit {
      Location lc1 = ModelFactory.createLocation("crit_1");
 
      expectedTrs = new HashSet();
-     expectedTrs.add(ModelFactory.createTransition(lw1, null, null, null, lc1));  //to critic
+     Transition choosed_two = ModelFactory.createTransition(lw1, null, null, null, lc1);
+     expectedTrs.add(choosed_two);  //to critic
      expectedTrs.add(tiw2); //to request
      expectedTrs.add(tie2); //to end
 
      //System.out.println(ts.toString());
      actualTrs = ts.post();
 
-     System.out.println("test4: " + actualTrs.toString() + " and " + expectedTrs.toString());
+     //System.out.println("test4: " + actualTrs.toString() + " and " + expectedTrs.toString());
      assertTrue(actualTrs.equals(expectedTrs));
+
+     //test 5
+     //apply a sync-transition (should return the set of complementary tr.)
+     expectedTrs = new HashSet();
+     expectedTrs.add(ModelFactory.createTransition(lunlock, null, null, null, llock));  //to critic
+     try
+     {
+       actualTrs = ts.apply(choosed_two);
+     } catch (NotEnabled_exp e) {assertTrue(false);}
+     assert(null == actualTrs); //it is null since just one solution is possible
+
+     //test 6 locations
+     Set<Location> expectedLocations = new HashSet();
+     expectedLocations.add(li2);   //init_2
+     expectedLocations.add(lc1);   //critic_1
+     expectedLocations.add(llock); //lock
+
+     assertTrue(ts.getCurrentStates().equals(expectedLocations));
 
      System.out.println("We pass !");
    }
