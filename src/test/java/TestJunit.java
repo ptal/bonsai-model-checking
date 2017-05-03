@@ -7,11 +7,15 @@ import java.util.Set;
 import java.util.HashSet;
 import bonsai.examples.model.*;
 
+import org.chocosolver.solver.*;
+
 public class TestJunit {
    @Test
 
    public void testPeterson() {
-     Transition_System ts = ModelFactory.createPetersonExample();
+     //build the model
+     IModel model = new Model("PertersonProblem");
+     Transition_System ts = ModelFactory.createPetersonExample(model);
      //caution !
      //System.out.println(ts.toString());
 

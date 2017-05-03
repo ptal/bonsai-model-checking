@@ -15,7 +15,7 @@ public class ModelFactory {
   public static Location createLocation(String lab) {return new Location(lab);}
 
   /* Create a Transition */
-  public static Transition createTransition(Location source, Constraint g, Action a, Constraint e, Location target)
+  public static Transition createTransition(Location source, Constraint g, Action a, IntVar e, Location target)
     { Transition t = new Transition(source, g, a, e, target);
       source.addTransition(t);
       return t;
@@ -71,38 +71,36 @@ public class ModelFactory {
   }
 
   /** Manage Constraints (guards and effects) **/
-  /** TODO Guards use lambda expressions (not supported 1.7) -> changed into static funcs. ?
-
   // x [<= >= < > !=] n
-  public static void createGuard_GT(Model model, IntVar v, IntVar n) // GT
+  public static Constraint createGuard_GT(IModel model, IntVar v, IntVar n) // GT
   {
-    return () -> model.arithm(y,">",n).post();
+    return model.arithm(v,">",n);
   }
-  public static void createGuard_GE(Model model, IntVar v, IntVar n) // GE
+  public static Constraint createGuard_GE(IModel model, IntVar v, IntVar n) // GE
   {
-    return () -> model.arithm(y,">=",n).post();
+    return model.arithm(v,">=",n);
   }
-  public static void createGuard_LT(Model model, IntVar v, IntVar n)  // LT
+  public static Constraint createGuard_LT(IModel model, IntVar v, IntVar n)  // LT
   {
-    return () -> model.arithm(y,"<",n).post();
+    return model.arithm(v,"<",n);
   }
-  public static void createGuard_LT(Model model, IntVar v, IntVar n)  // LE
+  public static Constraint createGuard_LE(IModel model, IntVar v, IntVar n)  // LE
   {
-    return () -> model.arithm(y,"<=",n).post();
+    return model.arithm(v,"<=",n);
   }
-  public static void createGuard_EG(Model model, IntVar v, IntVar n)  // EQ
+  public static Constraint createGuard_EG(IModel model, IntVar v, IntVar n)  // EQ
   {
-    return () -> model.arithm(y,"=",n).post();
+    return model.arithm(v,"=",n);
   }
-  public static void createGuard_DIF(Model model, IntVar v, IntVar n)  // DIF
+  public static Constraint createGuard_DIF(IModel model, IntVar v, IntVar n)  // DIF
   {
-    return () -> model.arithm(y,"!=",n).post();
+    return model.arithm(v,"!=",n);
   }
 
-  TODO Guards use lambda expressions (not supported 1.7) -> changed into static funcs. ? **/
+  /** TODO Guards use lambda expressions (not supported 1.7) -> changed into static funcs. ? **/
 
   // x' = x + n
-  public static IntVar createIntIncr(Model model, IntVar v, int n)
+  public static IntVar createIntIncr(IModel model, IntVar v, int n)
   {
     //TODO manage stream ! link v' and v
     IntVar vp = model.intOffsetView(v, n); // [TODO] CHECK ?? (need streams ?)
@@ -110,8 +108,10 @@ public class ModelFactory {
   }
   // Add intMinusView(y); (-a) intScaleView (a * b)
 
-  public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act)
+  public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act, IModel model, IntVar x_var)
   {
+    //local Variables
+    IntVar i_var = model.intVar("i"+ "_" + postfix, 0);
 
     // Locations
     Location li = createLocation("init" + "_" + postfix);
@@ -120,11 +120,11 @@ public class ModelFactory {
     Location lr = createLocation("release"  + "_" + postfix);
     Location le = createLocation("end"  + "_" + postfix);
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
-    Transition tiw = createTransition(li, /*if*/ null, Action.tau, null, lw);
+    Transition tiw = createTransition(li, createGuard_GE(model, i_var, N), Action.tau, null, lw);
     Transition twc = createTransition(lw, null, lock_Act[OUTPUT], null, lc); /* !lock */
-    Transition tcr = createTransition(lc, null, Action.tau, /*x++,*/ null, lr);
-    Transition tri = createTransition(lr, null, rel_Act[OUTPUT], /*i++,*/ null, li); /* !release */
-    Transition tie = createTransition(li, /*if,*/ null, Action.tau, null, le);
+    Transition tcr = createTransition(lc, null, Action.tau,       createIntIncr(model, x_var, 1), lr);
+    Transition tri = createTransition(lr, null, rel_Act[OUTPUT],  createIntIncr(model, x_var, 1), li); /* !release */
+    Transition tie = createTransition(li, createGuard_GE(model, i_var, N), Action.tau, null, le);
 
     //System.out.println("~~~~test: " + tiw.target.toString());
 
@@ -146,8 +146,13 @@ public class ModelFactory {
   }
 
   /////////// Test with the Peterson Example
-  public static Transition_System createPetersonExample()
+  static IntVar N = null;
+  public static Transition_System createPetersonExample(IModel model)
   {
+    //Global variable
+    IntVar x_var = model.intVar("x", 0);
+    N = model.intVar("N", 10);
+
     //Actions return Pair<InputAction, OutputAction>
     Action[] lock_Act = createIOActions("req");
     Action[] rel_Act = createIOActions("rel");
@@ -156,8 +161,8 @@ public class ModelFactory {
     // *********************** ****************** ***********************
     // *********************** build PG_1 and PG_2 ***********************
     // *********************** ****************** ***********************
-    Program_Graph process1 = createProcessModel("1", lock_Act, rel_Act);
-    Program_Graph process2 = createProcessModel("2", lock_Act, rel_Act);
+    Program_Graph process1 = createProcessModel("1", lock_Act, rel_Act, model, x_var);
+    Program_Graph process2 = createProcessModel("2", lock_Act, rel_Act, model, x_var);
 
     // lock Model
     // Locations
