@@ -8,6 +8,10 @@ import java.util.HashSet;
 import bonsai.examples.model.*;
 
 import org.chocosolver.solver.*;
+import org.chocosolver.solver.variables.*;
+import org.chocosolver.solver.constraints.*;
+
+import java.util.function.Consumer;
 
 public class TestJunit {
    @Test
@@ -17,7 +21,8 @@ public class TestJunit {
      IModel model = new Model("PertersonProblem");
      Transition_System ts = ModelFactory.createPetersonExample(model);
      //caution !
-     //System.out.println(ts.toString());
+     System.out.println("****** start ******");
+     printModel((Model) model);
 
      //cmp loc & transition
 
@@ -55,13 +60,18 @@ public class TestJunit {
      //test2
      //System.out.println("test2: " + actualTrs.toString() + " and " + expectedTrs.toString());
      assertTrue(actualTrs.equals(expectedTrs));
+     //System.out.println(ts.toString());
+
 
      //test3 apply
      try
      {
-       actualTrs = ts.apply(choosed_one);
+       actualTrs = ts.apply(choosed_one, model);
      } catch (NotEnabled_exp e) {assertTrue(false);}
      assertTrue(null == actualTrs);
+
+     System.out.println("****** first apply ******");
+     printModel((Model) model);
 
      //test4 post again
      Location lc1 = ModelFactory.createLocation("crit_1");
@@ -84,7 +94,7 @@ public class TestJunit {
      expectedTrs.add(ModelFactory.createTransition(lunlock, null, null, null, llock));  //to critic
      try
      {
-       actualTrs = ts.apply(choosed_two);
+       actualTrs = ts.apply(choosed_two, model);
      } catch (NotEnabled_exp e) {assertTrue(false);}
      assert(null == actualTrs); //it is null since just one solution is possible
 
@@ -96,6 +106,33 @@ public class TestJunit {
 
      assertTrue(ts.getCurrentStates().equals(expectedLocations));
 
+     System.out.println("****** end ******");
+     printModel((Model) model);
+
      System.out.println("We pass !");
+   }
+
+   /**
+     Auxiliary debug functions
+   **/
+   public static void printModel(Model model)
+   {
+     //constraints
+     System.out.println("~~~ ~~~ constraints");
+     Consumer<Model> CtrPrint = (Model m) -> {
+       System.out.print(m.getNbCstrs()+ ": ");
+       for(Constraint c : m.getCstrs()) {System.out.print(c.toString() + " ");}
+       System.out.print("\n");
+     };
+     CtrPrint.accept(model);
+
+     //variables
+     System.out.println("~~~ ~~~ vars");
+     Consumer<Model> VarPrint = (Model m) -> {
+       System.out.print(m.getNbVars()+ ": ");
+       for(Variable v : m.getVars()) {System.out.print(v.getName() + " ");}
+       System.out.print("\n");
+     };
+     VarPrint.accept(model);
    }
 }

@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import bonsai.examples.model.Transition;
 import bonsai.examples.model.Atomic_p;
+import org.chocosolver.solver.*;
 
 public class Location implements Comparable
 {
@@ -51,10 +52,11 @@ public class Location implements Comparable
   //public set<Atomic_p> getAP() {return sats;}
 
   //return the fired location
-  public Transition fire(Transition t) throws NotEnabled_exp
+  public Transition fire(Transition t, IModel model) throws NotEnabled_exp
   {
     Transition tgt = outgoing_t.get(t.target.hashCode());
     if(null == tgt) {throw new NotEnabled_exp();}
+    tgt.fire(model);
     return tgt;
   }
 

@@ -6,8 +6,11 @@ import java.util.HashSet;
 import bonsai.examples.model.Action;
 import bonsai.examples.model.Location;
 
+import org.chocosolver.solver.*;
 import org.chocosolver.solver.constraints.*;
 import org.chocosolver.solver.variables.*;
+
+import java.util.function.Consumer;
 
 public class Transition implements Comparable
 {
@@ -15,7 +18,7 @@ public class Transition implements Comparable
   public final Location source;
   public final Constraint guard;
   public final Action alpha;
-  public final IntVar effect;
+  public final Consumer effect;
   public final Location target;
 
   // Vars_i_t concerned by transition's guards and actions
@@ -31,13 +34,28 @@ public class Transition implements Comparable
     }
   }
 
-  private void addEffect(IntVar e)
+  // Interface -> solver
+  public void fire(IModel model)
   {
-    //for effects
-    if(null != e) Vars_i_t.add(e.getName());
+    //System.out.println("***** fire fire fire : " + toString() + "*** ");
+    // guards
+    if(null != guard)
+    {
+      guard.post();
+    }
+
+    //call effect - function
+    if(null == effect) return;
+    effect.accept(model);
   }
 
-  public Transition(Location s, Constraint g, Action a, IntVar e, Location t)
+  private void addEffect(Consumer e)
+  {
+    //for effects
+    //if(null != e) Vars_i_t.add(e.getName());
+  }
+
+  public Transition(Location s, Constraint g, Action a, Consumer e, Location t)
   {
     source = s; guard = g; alpha = a; effect = e; target = t;
     addGuard(g);
@@ -45,7 +63,7 @@ public class Transition implements Comparable
   }
 
   // tau transition
-  public Transition(Location s, Constraint g, IntVar e, Location t)
+  public Transition(Location s, Constraint g, Consumer e, Location t)
   {
     source = s; guard = g; alpha = Action.tau; effect = e; target = t;
     addGuard(g);
@@ -53,14 +71,14 @@ public class Transition implements Comparable
   }
 
   // true transition
-  public Transition(Location s, Action a, IntVar e, Location t)
+  public Transition(Location s, Action a, Consumer e, Location t)
   {
     source = s; guard = null; alpha = a; effect = e; target = t;
     addEffect(e);
   }
 
   // true and tau transition
-  public Transition(Location s, IntVar e, Location t)
+  public Transition(Location s, Consumer e, Location t)
   {
     source = s; guard = null; alpha = Action.tau; effect = e; target = t;
     addEffect(e);
@@ -95,7 +113,11 @@ public class Transition implements Comparable
 
   //no effect ?
 
-  public Set<String> getVars() {return Vars_i_t;}
+  public Set<String> getVars()
+  {
+    //TODO assert(false); //"noComplete (effect variables)");
+    return Vars_i_t;
+  }
 
   @Override
   public String toString()

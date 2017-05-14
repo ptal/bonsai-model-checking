@@ -9,13 +9,15 @@ import org.chocosolver.solver.*;
 import java.util.HashSet;
 import java.util.Set;
 
+import java.util.function.Consumer;
+
 public class ModelFactory {
 
   /* Create a Location */
   public static Location createLocation(String lab) {return new Location(lab);}
 
   /* Create a Transition */
-  public static Transition createTransition(Location source, Constraint g, Action a, IntVar e, Location target)
+  public static Transition createTransition(Location source, Constraint g, Action a, Consumer e, Location target)
     { Transition t = new Transition(source, g, a, e, target);
       source.addTransition(t);
       return t;
@@ -36,13 +38,6 @@ public class ModelFactory {
       actions[OUTPUT] = o;
       return actions;
     }
-
-/** [TODO]
-//???
-  public createGuard
-  public createEffect
-//???
-**/
 
   public static Program_Graph createProgram(Set<Location> locations, Set<Location> inits)
   {
@@ -97,21 +92,25 @@ public class ModelFactory {
     return model.arithm(v,"!=",n);
   }
 
-  /** TODO Guards use lambda expressions (not supported 1.7) -> changed into static funcs. ? **/
-
   // x' = x + n
-  public static IntVar createIntIncr(IModel model, IntVar v, int n)
+  public static Consumer<IModel> createIntIncr(StreamVariable i, int n)
   {
     //TODO manage stream ! link v' and v
-    IntVar vp = model.intOffsetView(v, n); // [TODO] CHECK ?? (need streams ?)
-    return vp;
+    return (IModel model) ->
+      {
+        //choco x_i+1
+        IntVar i_i = i.getInstance(i.getCurrentIndex()-1);            // Current i
+        IntVar i_p = i.IncrIndex(model, 0);                           // New i'
+        model.arithm(i_p, "=", model.intOffsetView(i_i, n)).post();
+      };
   }
   // Add intMinusView(y); (-a) intScaleView (a * b)
 
-  public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act, IModel model, IntVar x_var)
+  public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act, IModel model, StreamVariable x)
   {
     //local Variables
-    IntVar i_var = model.intVar("i"+ "_" + postfix, 0);
+    StreamVariable i = new StreamVariable("i" + "_" + postfix);
+    IntVar i_var = model.intVar(i.getName(), 0);
 
     // Locations
     Location li = createLocation("init" + "_" + postfix);
@@ -122,8 +121,8 @@ public class ModelFactory {
     // Transitions Location source, Constraint g, Action a, Constraint e,  Location target
     Transition tiw = createTransition(li, createGuard_GE(model, i_var, N), Action.tau, null, lw);
     Transition twc = createTransition(lw, null, lock_Act[OUTPUT], null, lc); /* !lock */
-    Transition tcr = createTransition(lc, null, Action.tau,       createIntIncr(model, x_var, 1), lr);
-    Transition tri = createTransition(lr, null, rel_Act[OUTPUT],  createIntIncr(model, x_var, 1), li); /* !release */
+    Transition tcr = createTransition(lc, null, Action.tau,       createIntIncr(x, 1), lr);
+    Transition tri = createTransition(lr, null, rel_Act[OUTPUT],  createIntIncr(i, 1), li); /* !release */
     Transition tie = createTransition(li, createGuard_GE(model, i_var, N), Action.tau, null, le);
 
     //System.out.println("~~~~test: " + tiw.target.toString());
@@ -150,7 +149,8 @@ public class ModelFactory {
   public static Transition_System createPetersonExample(IModel model)
   {
     //Global variable
-    IntVar x_var = model.intVar("x", 0);
+    StreamVariable x = new StreamVariable("x");
+    IntVar x_var = model.intVar(x.getName(), 0);
     N = model.intVar("N", 10);
 
     //Actions return Pair<InputAction, OutputAction>
@@ -161,8 +161,8 @@ public class ModelFactory {
     // *********************** ****************** ***********************
     // *********************** build PG_1 and PG_2 ***********************
     // *********************** ****************** ***********************
-    Program_Graph process1 = createProcessModel("1", lock_Act, rel_Act, model, x_var);
-    Program_Graph process2 = createProcessModel("2", lock_Act, rel_Act, model, x_var);
+    Program_Graph process1 = createProcessModel("1", lock_Act, rel_Act, model, x);
+    Program_Graph process2 = createProcessModel("2", lock_Act, rel_Act, model, x);
 
     // lock Model
     // Locations

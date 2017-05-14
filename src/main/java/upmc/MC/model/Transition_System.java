@@ -12,6 +12,7 @@ import java.util.Iterator;
 
 import bonsai.examples.model.Location;
 import org.chocosolver.solver.search.strategy.selectors.variables.*;
+import org.chocosolver.solver.*;
 
 public class Transition_System
 {
@@ -90,8 +91,6 @@ public class Transition_System
     assert(TS_state.CREAT != internal_state);
 
     //first post
-
-    //[TODO] Tests
     ArrayList<Set<Location>> sis = new ArrayList<Set<Location>>(); //in case of initial locations
     for(Program_Graph pg : PGs)
       {
@@ -241,10 +240,10 @@ public class Transition_System
         2) -> set of sync-transitions : if it was an action-transition
   [exception] NotEnabled_exp : if the input transition is not enabled at current ts-state
 **/
-  public Set<Transition> apply(Transition t_fired) throws NotEnabled_exp
+  public Set<Transition> apply(Transition t_fired, IModel model) throws NotEnabled_exp
   {
     assert(TS_state.CREAT != internal_state);
-    Transition t_pg_fired = pg_apply(t_fired);
+    Transition t_pg_fired = pg_apply(t_fired, model);
     if(null == t_pg_fired) {throw new NotEnabled_exp();}
 
     if(! (t_pg_fired.alpha instanceof OutputAction)) return null;
@@ -257,18 +256,18 @@ public class Transition_System
 
     if(tis.size() > 1) return tis; //non-det choice (second bonsai internal choice)
     //else no choice
-    if(null == pg_apply( ((Transition) tis.toArray()[0]) )) {throw new NotEnabled_exp();}
+    if(null == pg_apply( ((Transition) tis.toArray()[0]), model)) {throw new NotEnabled_exp();}
     return null;
   }
 
   //return the real fired transition (from pg)
-  private Transition pg_apply(Transition t_fired)
+  private Transition pg_apply(Transition t_fired, IModel model)
   {
     for(Program_Graph pg : PGs)
     {
       try
       {
-        return pg.apply(t_fired);
+        return pg.apply(t_fired, model);
       }
       catch(NotEnabled_exp e){}
     }

@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import bonsai.examples.model.Location;
 import org.chocosolver.solver.search.strategy.selectors.variables.*;
+import org.chocosolver.solver.*;
 
 public class  Program_Graph
 {
@@ -102,7 +103,7 @@ public class  Program_Graph
 
 // Apply one of the transition from the current location
 // retreive the pg's transition and apply it (prevent from bad transition in input)
-  public Transition apply(Transition t) throws NotEnabled_exp
+  public Transition apply(Transition t, IModel model) throws NotEnabled_exp
   {
     assert(is_in_TS);
 
@@ -120,7 +121,7 @@ public class  Program_Graph
       to_fired = current_l;
     }
 
-    Transition fired = to_fired.fire(t);
+    Transition fired = to_fired.fire(t, model);
     current_l = fired.target;
     return fired;
   }
