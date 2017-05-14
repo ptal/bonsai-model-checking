@@ -98,9 +98,11 @@ public class ModelFactory {
     //TODO manage stream ! link v' and v
     return (IModel model) ->
       {
+        System.out.println("I get index " + Integer.toString(i.getCurrentIndex()-1));
+
         //choco x_i+1
-        IntVar i_i = i.getInstance(i.getCurrentIndex()-1);            // Current i
-        IntVar i_p = i.IncrIndex(model, 0);                           // New i'
+        IntVar i_i = i.getInstance(i.getCurrentIndex()-1);              // Current i
+        IntVar i_p = i.IncrIndex(model, 0);                             // New i'
         model.arithm(i_p, "=", model.intOffsetView(i_i, n)).post();
       };
   }
@@ -108,9 +110,9 @@ public class ModelFactory {
 
   public static Program_Graph createProcessModel(String postfix, Action[] lock_Act, Action[] rel_Act, IModel model, StreamVariable x)
   {
-    //local Variables
-    StreamVariable i = new StreamVariable("i" + "_" + postfix);
-    IntVar i_var = model.intVar(i.getName(), 0);
+    //local Variables -->> new variable
+    StreamVariable i = new StreamVariable(model, "i" + "_" + postfix, 0);
+    IntVar i_var = i.getInstance(0);
 
     // Locations
     Location li = createLocation("init" + "_" + postfix);
@@ -149,8 +151,7 @@ public class ModelFactory {
   public static Transition_System createPetersonExample(IModel model)
   {
     //Global variable
-    StreamVariable x = new StreamVariable("x");
-    IntVar x_var = model.intVar(x.getName(), 0);
+    StreamVariable x = new StreamVariable(model, "x", 0);
     N = model.intVar("N", 10);
 
     //Actions return Pair<InputAction, OutputAction>

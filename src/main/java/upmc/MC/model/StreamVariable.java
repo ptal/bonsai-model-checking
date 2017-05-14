@@ -11,18 +11,21 @@ public class StreamVariable {
   private String name;
   private ArrayList<IntVar> instances; //avoid ? (manage domains with stream only ?)
 
-  public StreamVariable(String n)
+  public StreamVariable(IModel model, String n, int init_val)
   {
     name      = n;
-    counter   = 0;
+    counter   = 1;
     instances = new ArrayList<IntVar>();
+
+    //init
+    instances.add(model.intVar(name + "$0", init_val));
   }
 
   public int getCurrentIndex(){return counter;}
   public IntVar IncrIndex(IModel model, int init)
   {
     //[Interface solver] ++ addVariable
-    IntVar v_i = model.intVar(name + "_" + Integer.toString(getCurrentIndex()), init);
+    IntVar v_i = model.intVar(name + "$" + Integer.toString(getCurrentIndex()), init);
     instances.add(v_i);
     counter++;
 

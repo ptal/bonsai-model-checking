@@ -21,8 +21,8 @@ public class TestJunit {
      IModel model = new Model("PertersonProblem");
      Transition_System ts = ModelFactory.createPetersonExample(model);
      //caution !
-     System.out.println("****** start ******");
-     printModel((Model) model);
+     //System.out.println("****** start ******");
+     //printModel((Model) model);
 
      //cmp loc & transition
 
@@ -43,6 +43,7 @@ public class TestJunit {
 
      //assertEquals(true, ts.getCurrentStates().equals(inits)); same
      assertTrue(ts.getCurrentStates().equals(inits));
+     assertTrue(0 == ((Model) model).getNbCstrs()); //test constraints (from guard)
 
      //** First post **//
      Set<Transition> expectedTrs = new HashSet();
@@ -68,10 +69,12 @@ public class TestJunit {
      {
        actualTrs = ts.apply(choosed_one, model);
      } catch (NotEnabled_exp e) {assertTrue(false);}
-     assertTrue(null == actualTrs);
+     assertTrue(null == actualTrs); //test locations
+     assertTrue(1 == ((Model) model).getNbCstrs()); //test constraints (from guard)
 
-     System.out.println("****** first apply ******");
-     printModel((Model) model);
+
+     //System.out.println("****** first apply ******");
+     //printModel((Model) model);
 
      //test4 post again
      Location lc1 = ModelFactory.createLocation("crit_1");
@@ -90,19 +93,49 @@ public class TestJunit {
 
      //test 5
      //apply a sync-transition (should return the set of complementary tr.)
-     expectedTrs = new HashSet();
-     expectedTrs.add(ModelFactory.createTransition(lunlock, null, null, null, llock));  //to critic
      try
      {
        actualTrs = ts.apply(choosed_two, model);
      } catch (NotEnabled_exp e) {assertTrue(false);}
-     assert(null == actualTrs); //it is null since just one solution is possible
+     assert(null == actualTrs); //it is null since just one solution is possible (sync-tr)
 
      //test 6 locations
      Set<Location> expectedLocations = new HashSet();
      expectedLocations.add(li2);   //init_2
      expectedLocations.add(lc1);   //critic_1
      expectedLocations.add(llock); //lock
+
+     assertTrue(ts.getCurrentStates().equals(expectedLocations));
+
+
+     //test 7 effect (x++)
+     Location lrel1 = ModelFactory.createLocation("release_1");
+
+     expectedTrs = new HashSet();
+     Transition choosed_three = ModelFactory.createTransition(lc1, null, null, null, lrel1);
+     expectedTrs.add(choosed_three);  //to incr
+     expectedTrs.add(tiw2);           //to request
+     expectedTrs.add(tie2);           //to end
+
+     //System.out.println(ts.toString());
+     actualTrs = ts.post();
+
+     //System.out.println("test4: " + actualTrs.toString() + " and " + expectedTrs.toString());
+     assertTrue(actualTrs.equals(expectedTrs));
+
+     // test 8 apply
+     try
+     {
+       actualTrs = ts.apply(choosed_three, model);
+     } catch (NotEnabled_exp e) {assertTrue(false);}
+     assert(null == actualTrs); //it is null (tau-tr)
+     assertTrue(2 == ((Model) model).getNbCstrs()); //test constraints (from guard)
+
+     //test 9 locations
+     expectedLocations = new HashSet();
+     expectedLocations.add(li2);      //init_2
+     expectedLocations.add(lrel1);    //release_1
+     expectedLocations.add(llock);    //lock
 
      assertTrue(ts.getCurrentStates().equals(expectedLocations));
 
