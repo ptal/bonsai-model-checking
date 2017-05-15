@@ -98,7 +98,7 @@ public class ModelFactory {
     //TODO manage stream ! link v' and v
     return (IModel model) ->
       {
-        System.out.println("I get index " + Integer.toString(i.getCurrentIndex()-1));
+        //System.out.println("I get index " + Integer.toString(i.getCurrentIndex()-1));
 
         //choco x_i+1
         IntVar i_i = i.getInstance(i.getCurrentIndex()-1);              // Current i
